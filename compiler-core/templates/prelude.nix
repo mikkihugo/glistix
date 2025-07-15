@@ -85,21 +85,36 @@ let
       let
         mappedExtraProperties =
           builtins.map
-            (name: "\n${name} = ${simpleInspect extra.${name} 0}")
+            (name: "    ${name} = ${simpleInspect extra.${name} 0}")
             (builtins.attrNames extra);
 
         extraProperties =
-          builtins.concatStringsSep
-            "\n"
-            mappedExtraProperties;
+          if builtins.length mappedExtraProperties > 0
+          then "\n" + builtins.concatStringsSep "\n" mappedExtraProperties
+          else "";
+
+        # Add visual separator and improved formatting
+        separator = "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━";
+        location = "${module}:${builtins.toString line}";
       in
         ''
+          
+          ${separator}
+          ❌ Runtime Error: ${variant}
+          ${separator}
+          
           ${message}
-
-          gleam_error = ${builtins.toJSON variant}
-          module = ${builtins.toJSON module}
-          line = ${builtins.toString line}
-          function = ${builtins.toJSON function}${extraProperties}
+          
+          ┌─ Location: ${location} in function "${function}"
+          │  
+          │  Error Type: ${variant}
+          │  Module:     ${module}
+          │  Function:   ${function}
+          │  Line:       ${builtins.toString line}${extraProperties}
+          │  
+          └─ This error occurred during execution of Gleam code compiled to Nix.
+          
+          ${separator}
         '';
 
   # @internal
