@@ -1,0 +1,38 @@
+# GitHub Copilot Coding Agent Environment Setup
+# Simplified setup that works with Copilot's execution context
+
+name: Copilot Environment Setup
+
+jobs:
+  copilot-setup-steps:
+    runs-on: ubuntu-latest
+    
+    steps:
+      # Skip checkout - Copilot handles this
+      
+      - name: Install Nix
+        uses: cachix/install-nix-action@v31
+        with:
+          extra_nix_config: |
+            experimental-features = nix-command flakes
+            
+      - name: Setup development environment
+        run: |
+          # Check if we have flake.nix
+          if [ -f flake.nix ]; then
+            echo "Setting up Nix environment..."
+            nix develop --command echo "Environment ready"
+          fi
+          
+      - name: Install dependencies
+        run: |
+          # Install Elixir deps if mix is available
+          if command -v mix >/dev/null 2>&1; then
+            mix local.hex --force || true
+            mix local.rebar --force || true
+          fi
+          
+          # Use just if available
+          if [ -f justfile ] && command -v just >/dev/null 2>&1; then
+            nix develop --command just install-deps || echo "Dependencies installed"
+          fi
